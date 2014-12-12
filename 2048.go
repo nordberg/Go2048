@@ -15,38 +15,26 @@ type Tuple struct {
     a, b int
 }
 
-type key struct {
-    x  int
-    y  int
-    ch rune
-}
-
 const (
     width = 4
     height = 4
 )
 
-var K_ARROW_UP = []key{{54, 10, '('}, {55, 10, 0x2191}, {56, 10, ')'}}
-var K_ARROW_LEFT = []key{{50, 12, '('}, {51, 12, 0x2190}, {52, 12, ')'}}
-var K_ARROW_DOWN = []key{{54, 12, '('}, {55, 12, 0x2193}, {56, 12, ')'}}
-var K_ARROW_RIGHT = []key{{58, 12, '('}, {59, 12, 0x2192}, {60, 12, ')'}}
-
 func main() {
-    gameOver := false
     score := 0
 
     fmt.Println("Welcome to 2048!")
     fmt.Println("R: Right, U: Up, D: Down, L: Left (lower case works)")
 
-    //round := 1
+    // Two dimensional array (the board)
     board := make([][]int, height)
-
     for i := range board {
         board[i] = make([]int, width)
     }
 
-    for !gameOver {
+    for {
         if !addTwo(board) {
+            // Failed to add a new 2, game over
             break
         }
 
@@ -63,7 +51,7 @@ func main() {
 func addTwo(board [][]int) bool {
     r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-    // A list with possible spots for the new number. If length = 0 -> Game Over
+    // A list with possible spots for the new 2.
     openSpots := list.New();
 
     for i := range board {
@@ -77,12 +65,16 @@ func addTwo(board [][]int) bool {
         }
     }
 
+    // No open spots to add 2, game over
     if (openSpots.Len() == 0) {
         return false
     }
 
+    // Add the new 2 at random place
     index := r.Intn(openSpots.Len())
 
+    // Iterate through open spots until index is found
+    // Is there a better way to do this?
     e := openSpots.Front()
     for i := 0; i < openSpots.Len(); i++ {
         if i == index {
@@ -99,26 +91,62 @@ func addTwo(board [][]int) bool {
 }
 
 func userInput(board [][]int) {
+    // Read user input for correct tile movement
     reader := bufio.NewReader(os.Stdin)
     input, _ := reader.ReadString('\n')
 
     input = strings.ToLower(input)
+    input = strings.TrimSpace(input)
+    updateBoard(board, input)
+}
 
-    switch input {
+func updateBoard(board [][]int, dir string) {
+    switch dir {
     case "u":
         
     case "d":
 
     case "l":
-
+        
     case "r":
-
+        
     default:
 
     }
 
+    // THREE nested for-loops, I like to live dangerously
+    for j := 0; j < width; j++ {
+        change := true
+        for change {
+            change = false
+            for i := height - 1; i > 0; i-- {
+                if board[i][j] != 0 && board[i][j] == board[i-1][j] {
+                    // Two equal to be merged into 2x
+                    board[i][j] *= -2
+                    board[i-1][j] = 0
+                    change = true
+                } else if board[i][j] == 0 && board[i-1][j] != 0 {
+                    // A number has 0 below, move it down
+                    board[i][j] = board[i-1][j]
+                    board[i-1][j] = 0
+                    change = true
+                }
+            }
+        }
+
+        for i := height - 1; i > 0; i-- {
+            if board[i][j] < 0 {
+                board[i][j] *= -1
+            }
+        }
+    }
 }
 
+// Print the board with format:
+// [X][X][X][X]
+// [X][X][X][X]
+// [X][X][X][X]
+// [X][X][X][X]
 func printBoard(board [][]int) string {
 
     var output string
